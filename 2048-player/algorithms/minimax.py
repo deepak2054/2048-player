@@ -5,166 +5,170 @@
 # https://github.com/ovolve/2048-AI/tree/master/js
 # https://stackoverflow.com/questions/22342854/what-is-the-optimal-algorithm-for-the-game-2048/22389702#22389702
 
+import sys
+sys.path.append(sys.path[0]+'/../')
 from core.evaluate_function import MinimaxEvaluator
 import numpy as np
 import copy as cp
 import math
-from core.logic import can_move, check_end, move, add_up_v2
-from core.utils import Actions, find_empty_cells
+from core.logic import move, check_gameOver, move, add_upElements_v2
+from core.utils import actions, get_not_filled_cell
 
 class Minimax:
     def __init__(self, board = None, max_depth = 4):
         self.board = board
         self.max_depth = max_depth
-        self.ACTIONS = Actions
+        self.ACTIONS = actions
 
-    def eval(self, board):
+    def evaluate(self, board):
         '''
-        A evaluation function
+        An function used for  evaluation
         '''
         me = MinimaxEvaluator(board)
-        empty_counts = me.emptiness()
-        smooth_weight = 0.1
-        mono_weight = 1.0
-        empty_weight = 2.7
-        max_weight = 1.0
-        smooth = me.smoothness()*smooth_weight
-        mono = me.monotonicity() * mono_weight
+        emptyCounts = me.empty_cells()
+        ssmoothWeights = 0.1
+        monoWeights = 1.0
+        emptyWeights = 2.7
+        maxWeights = 1.0
+        smooth = me.smoothness()*ssmoothWeights
+        mono = me.monotonicity() * monoWeights
         # When no empty cells the while loop should terminate.
         # So no need to consider it here.
-        if(empty_counts == 0):
+        if(emptyCounts == 0):
             emp = -np.inf
         else:
-            emp = math.log(empty_counts, 2) * empty_weight
-        maxwgt = me.max_val() * max_weight
+            emp = math.log(emptyCounts, 2) * emptyWeights
+        maxwgt = me.maximum_value() * maxWeights
         return smooth + mono + emp + maxwgt
 
-    def basic_move(self):
+    def basicMove(self):
         '''
-        This function return direction calculate by a basic/ non-pruning algorithm
-        :return: a direction string
+        This function return direction which is calculated by  using a basic or a  nonpruning algorithm
+        :returns: a  string indicating direction
         '''
-        best_move = None
-        max_value = -np.inf
+        bestMove = None
+        maxValue = -np.inf
         # currently is max player. Facing on 4 directions, you iterate, compare the heuristic,
         # choose the best direction to go.
         for action in self.ACTIONS:
-            # best_value = -np.inf
-            board_copy = cp.deepcopy(self.board)
-            if can_move(board_copy, action):
-                move(board_copy, action)
-                add_up_v2(board_copy,action)
-                move(board_copy, action)
-                best_value = self.basic_run(board_copy, self.max_depth, False)
+            # bestValue = -np.inf
+            boardCopy = cp.deepcopy(self.board)
+            if move(boardCopy, action):
+                move(boardCopy, action)
+                add_upElements_v2(boardCopy,action)
+                move(boardCopy, action)
+                bestValue = self.basicRun(boardCopy, self.max_depth, False)
             # if action == "RIGHT" or action == "DOWN":
-            #     best_value += 500
-                if best_value > max_value:
-                    max_value = best_value
-                    best_move = action
-        if best_move == None:
+            #     bestValue += 500
+                if bestValue > maxValue:
+                    maxValue = bestValue
+                    bestMove = action
+        if bestMove == None:
             # raise ValueError("The best move is None! Check minimax algorithm.")
             return self.ACTIONS[np.random.randint(0,3)]
-        return best_move
+        return bestMove
 
-    def basic_run(self, board, max_depth, is_max):
-        if (max_depth == 0) or check_end(board):
-            return self.eval(board)
+    def basicRun(self, board, max_depth, is_max):
+        if (max_depth == 0) or check_gameOver(board):
+            return self.evaluate(board)
         if is_max:
-            best_value = -np.inf
+            bestValue = -np.inf
             children = []
             for action in self.ACTIONS:
-                board_copy = cp.deepcopy(board)
-                if can_move(board_copy, action):
-                    move(board_copy, action)
-                    add_up_v2(board_copy, action)
-                    move(board_copy, action)
-                    children.append(board_copy)
+                boardCopy = cp.deepcopy(board)
+                if move(boardCopy, action):
+                    move(boardCopy, action)
+                    add_upElements_v2(boardCopy, action)
+                    move(boardCopy, action)
+                    children.append(boardCopy)
             for child in children:
-                best_value = max(best_value, self.basic_run(child, max_depth - 1, False))
+                bestValue = max(bestValue, self.basicRun(child, max_depth - 1, False))
 
-            return best_value
+            return bestValue
         else:
-            best_value = np.inf
+            bestValue = np.inf
             children = []
-            empty_cells = find_empty_cells(board)
+            empty_cells = get_not_filled_cell(board)
             for cell in empty_cells:
-                board_copy = cp.deepcopy(board)
-                board_copy[cell[0]][cell[1]] = 2
-                children.append(board_copy)
-                board_copy = cp.deepcopy(board)
-                board_copy[cell[0]][cell[1]] = 4
-                children.append(board_copy)
+                boardCopy = cp.deepcopy(board)
+                boardCopy[cell[0]][cell[1]] = 2
+                children.append(boardCopy)
+                boardCopy = cp.deepcopy(board)
+                boardCopy[cell[0]][cell[1]] = 4
+                children.append(boardCopy)
             for child in children:
-                best_value = min(best_value, self.basic_run(child, max_depth - 1, True))
-            return best_value
+                bestValue = min(bestValue, self.basicRun(child, max_depth - 1, True))
+            return bestValue
 
 
 
 
-    def alpha_beta_move(self):
+    def alphabeta_move(self):
         '''
         This function return direction calculate by a alpha-beta pruning algorithm
         :return: a direction string
         '''
-        best_move = None
-        max_value = -np.inf
+        bestMove = None
+        maxValue = -np.inf
         # currently is max player. Facing on 4 directions, you iterate, compare the heuristic,
         # choose the best direction to go.
         for action in self.ACTIONS:
-            best_value = -np.inf
-            board_copy = cp.deepcopy(self.board)
-            if can_move(board_copy, action):
-                move(board_copy, action)
-                add_up_v2(board_copy,action)
-                move(board_copy,action)
-                best_value = self.alpha_beta_run(board_copy, self.max_depth, -np.inf, np.inf, False)
+            bestValue = -np.inf
+            boardCopy = cp.deepcopy(self.board)
+            if move(boardCopy, action):
+                move(boardCopy, action)
+                add_upElements_v2(boardCopy,action)
+                move(boardCopy,action)
+                bestValue = self.alphabeta_run(boardCopy, self.max_depth, -np.inf, np.inf, False)
             # if action == "RIGHT" or action == "DOWN":
-            #     best_value += 500
-            if best_value >= max_value:
-                max_value = best_value
-                best_move = action
-            print(best_value)
-        if best_move == None:
+            #     bestValue += 500
+            if bestValue >= maxValue:
+                maxValue = bestValue
+                bestMove = action
+            print(bestValue)
+        if bestMove == None:
             raise ValueError("The best move is None! Check minimax algorithm.")
-        return best_move
+        return bestMove
 
-    def alpha_beta_run(self, board, max_depth, alpha, beta, is_max):
+    def alphabeta_run(self, board, max_depth, alpha, beta, is_max):
         if max_depth == 0:
-            return self.eval(board)
-        if not check_end(board):
-            return self.eval(board)
+            return self.evaluate(board)
+        if not check_gameOver(board):
+            return self.evaluate(board)
 
         if is_max:
-            best_value = -np.inf
+            bestValue = -np.inf
             children = []
             for action in self.ACTIONS:
-                board_copy = cp.deepcopy(board)
-                if can_move(board_copy, action):
-                    move(board_copy, action)
-                    add_up_v2(board_copy, action)
-                    move(board_copy, action)
-                    children.append(board_copy)
+                boardCopy = cp.deepcopy(board)
+                if move(boardCopy, action):
+                    move(boardCopy, action)
+                    add_upElements_v2(boardCopy, action)
+                    move(boardCopy, action)
+                    children.append(boardCopy)
             for child in children:
-                best_value = max(best_value, self.alpha_beta_run(child, max_depth - 1, alpha, beta, False))
-                if best_value >= beta:
-                    return best_value
-                alpha = max(alpha, best_value)
-            return best_value
+                bestValue = max(bestValue, self.alphabeta_run(child, max_depth - 1, alpha, beta, False))
+                if bestValue >= beta:
+                    return bestValue
+                alpha = max(alpha, bestValue)
+            return bestValue
         else:
-            best_value = np.inf
+            bestValue = np.inf
             children = []
-            empty_cells = find_empty_cells(board)
+            empty_cells = get_not_filled_cell(board)
             for cell in empty_cells:
-                board_copy = cp.deepcopy(board)
-                board_copy[cell[0]][cell[1]] = 2
-                children.append(board_copy)
-                board_copy = cp.deepcopy(board)
-                board_copy[cell[0]][cell[1]] = 4
-                children.append(board_copy)
+                boardCopy = cp.deepcopy(board)
+                boardCopy[cell[0]][cell[1]] = 2
+                children.append(boardCopy)
+                boardCopy = cp.deepcopy(board)
+                boardCopy[cell[0]][cell[1]] = 4
+                children.append(boardCopy)
             for child in children:
-                best_value = min(best_value, self.alpha_beta_run(child, max_depth - 1, alpha, beta, True))
-                if best_value <= alpha:
-                    return best_value
-                beta = min(beta, best_value)
-            return best_value
+                bestValue = min(bestValue, self.alphabeta_run(child, max_depth - 1, alpha, beta, True))
+                if bestValue <= alpha:
+                    return bestValue
+                beta = min(beta, bestValue)
+            return bestValue
 
+x=Minimax()
+x.basicMove()

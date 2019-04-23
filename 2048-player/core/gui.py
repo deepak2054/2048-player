@@ -6,8 +6,10 @@ import time
 from random import *
 from tkinter import *
 from sys import platform
-from algorithms.MCTS import naive_random_move
-from algorithms.expectimax import expectimax
+import sys
+sys.path.append(sys.path[0]+'/../')
+from algorithms.MCTS import random_move_naive
+from algorithms.expectimax import expecti_max_main
 from algorithms.minimax import Minimax
 from core.utils import *
 from core.logic import *
@@ -29,22 +31,23 @@ FONT = ("Verdana", 20, "bold")
 
 MOVES = ('UP', 'DOWN', 'LEFT', 'RIGHT')
 
-class GameGrid(Frame):
-    def __init__(self, AI_mode=True, which_AI = 'minimax'):
+class Game(Frame):
+    def __init__(self, mode=True, define_AI = 'MINIMAX'):
         Frame.__init__(self)
         self.actions = {'w': 'UP', 'W': 'UP', 's': 'DOWN', 'S': 'DOWN',
                          'a': 'LEFT', 'A': 'LEFT', 'd': 'RIGHT', 'D': 'RIGHT'}
         self.grid()
         self.master.title('2048 Player - CS534 Final Project')
-        self.master.bind("<Key>", self.key_down)
+        self.master.bind("<Key>", self.keyDown)
         self.grid_cells = []
-        self.init_matrix()
-        self.init_grid()
-        self.init_score()
-        self.update_score()
-        self.update_grid_cells()
+        self.matrices()
+        self.grids()
+        self.scores()
+        self.updateScores()
+        self.UpdateGridCells()
 
-        if AI_mode:
+        if mode:
+            print('inside mode')
             if platform == 'win32' or platform == 'cygwin':
                 class clippanelthread(threading.Thread):
                     def __init__(self):
@@ -54,29 +57,29 @@ class GameGrid(Frame):
                         clippanelcheck()
 
                 def clippanelcheck():
-                    if which_AI.upper() == 'EXPECTIMAX':
+                    if define_AI.upper() == 'EXPECTIMAX':
                         self.expectimax_AI_run()
-                    elif which_AI.upper() == 'MCTS':
-                        self.simple_mcts_AI_run()
-                    elif which_AI.upper() == "MINIMAX":
-                        self.minimax_run()
-                    elif which_AI.upper() == "MINIMAX_PRUNING":
-                        self.minimax_pruning_run()
+                    elif define_AI.upper() == 'MCTS':
+                        self.mcts_AI_run()
+                    elif define_AI.upper() == "MINIMAX":
+                        self.Ai_minimax_run()
+                    elif define_AI.upper() == "MINIMAX_PRUNING":
+                        self.Ai_minimax_pruning_run()
                 clippanelthread.daemon = True
 
                 clippanelthread().start()
             else:
-                if which_AI.upper() == 'EXPECTIMAX':
+                if define_AI.upper() == 'EXPECTIMAX':
                     self.expectimax_AI_run()
-                elif which_AI.upper() == 'MCTS':
-                    self.simple_mcts_AI_run()
-                elif which_AI.upper() == "MINIMAX":
-                    self.minimax_run()
-                elif which_AI.upper() == "MINIMAX_PRUNING":
-                    self.minimax_pruning_run()
+                elif define_AI.upper() == 'MCTS':
+                    self.mcts_AI_run()
+                elif define_AI.upper() == "MINIMAX":
+                    self.Ai_minimax_run()
+                elif define_AI.upper() == "MINIMAX_PRUNING":
+                    self.Ai_minimax_pruning_run()
         self.mainloop()
 
-    def init_score(self):
+    def scores(self):
         footer_label = Frame(self.background, bg=BACKGROUND_columnOR_CELL_EMPTY, width=SIZE/2, height=50)
         footer_label.grid(row = GRID_LEN, columnumn = 0, columnumnspan = 2, padx=GRID_PADDING, pady=GRID_PADDING)
         title_cell = Label(master=footer_label, text="Score:", bg=BACKGROUND_columnOR_DICT[2], justify=CENTER, font=FONT, width=10,
@@ -89,7 +92,7 @@ class GameGrid(Frame):
         self.score_cell.grid()
 
 
-    def init_grid(self):
+    def grids(self):
         self.background = Frame(self, bg=BACKGROUND_columnOR_GAME, width=SIZE, height=SIZE+50)
         self.background.grid()
         for i in range(GRID_LEN):
@@ -105,15 +108,15 @@ class GameGrid(Frame):
 
             self.grid_cells.append(grid_row)
 
-    def gen(self):
+    def generate(self):
         return randint(0, GRID_LEN - 1)
 
-    def init_matrix(self):
+    def matrices(self):
         self.matrix = generate_panel(4)
         init_two(self.matrix)
         self.score = 0
 
-    def update_grid_cells(self):
+    def UpdateGridCells(self):
         for i in range(GRID_LEN):
             for j in range(GRID_LEN):
                 new_number = self.matrix[i][j]
@@ -124,11 +127,11 @@ class GameGrid(Frame):
                                                     fg=CELL_columnOR_DICT[new_number])
         self.update_idletasks()
 
-    def update_score(self):
+    def updateScores(self):
         self.score_cell.configure(text=self.score)
 
 
-    def key_down(self, event):
+    def keyDown(self, event):
         key = repr(event.char).replace("'", "")
         if key in self.actions:
             action = self.actions[key]
@@ -137,32 +140,30 @@ class GameGrid(Frame):
                 self.score += add_upElements_v2(self.matrix, action)
                 move(self.matrix, action)
                 simple_adder(self.matrix)
-                self.update_score()
-                self.update_grid_cells()
+                self.updateScores()
+                self.UpdateGridCells()
                 if check_gameOver(self.matrix):
                     self.grid_cells[1][1].configure(text="Game", bg=BACKGROUND_columnOR_CELL_EMPTY)
                     self.grid_cells[1][2].configure(text="Over!", bg=BACKGROUND_columnOR_CELL_EMPTY)
 
     def generate_next(self):
-        index = (self.gen(), self.gen())
+        index = (self.generate(), self.generate())
         while self.matrix[index[0]][index[1]] != "*":
-            index = (self.gen(), self.gen())
+            index = (self.generate(), self.generate())
         self.matrix[index[0]][index[1]] = 2
 
-    def simple_mcts_AI_run(self):
+    def mcts_AI_run(self):
         while not check_gameOver(self.matrix):
-            action, successpanels = naive_random_move(self.matrix,self.score,test_moves=30)
+            action, successpanels = random_move_naive(self.matrix,self.score,30)
             if check_move_possible(self.matrix,action):
                 move(self.matrix, action)
                 self.score += add_upElements_v2(self.matrix, action)
                 move(self.matrix, action)
-                self.update_score()
-                self.update_grid_cells()
+                self.updateScores()
+                self.UpdateGridCells()
                 simple_adder(self.matrix)
-                self.update_grid_cells()
-                # if check_gameOver(self.matrix):
-                #     self.grid_cells[1][1].configure(text="Game", bg=BACKGROUND_columnOR_CELL_EMPTY)
-                #     self.grid_cells[1][2].configure(text="Over!", bg=BACKGROUND_columnOR_CELL_EMPTY)
+                self.UpdateGridCells()
+               
 
     def expectimax_AI_run(self):
         while not check_gameOver(self.matrix):
@@ -181,7 +182,7 @@ class GameGrid(Frame):
                 add_upElements(temp_panel, direction, 0)
                 move(temp_panel, direction)
 
-                alpha = expectimax(temp_panel, depth)
+                alpha = expecti_max_main(temp_panel, depth)
                 if best_val < alpha:
                     best_val = alpha
                     best_move = direction
@@ -189,54 +190,35 @@ class GameGrid(Frame):
             move(self.matrix,best_move)
             self.score += add_upElements_v2(self.matrix, best_move)
             move(self.matrix,best_move)
-            self.update_score()
-            self.update_grid_cells()
+            self.updateScores()
+            self.UpdateGridCells()
             simple_adder(self.matrix)
-            self.update_grid_cells()
+            self.UpdateGridCells()
 
-    def minimax_run(self):
+    def Ai_minimax_run(self):
         while not check_gameOver(self.matrix):
-            mm = Minimax(panel= self.matrix, max_depth= 5)
-            best_move = mm.basic_move()
+            mm = Minimax(board= self.matrix, max_depth= 5)
+            best_move = mm.basicMove()
             if check_move_possible(self.matrix, best_move):
                 move(self.matrix, best_move)
                 self.score +=add_upElements_v2(self.matrix, best_move)
                 move(self.matrix, best_move)
-                self.update_score()
-                self.update_grid_cells()
+                self.updateScores()
+                self.UpdateGridCells()
                 simple_adder(self.matrix)
-                self.update_grid_cells()
-                # time.sleep(0.1)
-                # if check_gameOver(self.matrix):
-                #     self.grid_cells[1][1].configure(text="Game", bg=BACKGROUND_columnOR_CELL_EMPTY)
-                #     self.grid_cells[1][2].configure(text="Over!", bg=BACKGROUND_columnOR_CELL_EMPTY)
+                self.UpdateGridCells()
+            
 
-    def minimax_pruning_run(self):
+    def Ai_minimax_pruning_run(self):
         while not check_gameOver(self.matrix):
-            mm = Minimax(panel= self.matrix, max_depth= 4)
-            best_move = mm.alpha_beta_move()
+            mm = Minimax(board= self.matrix, max_depth= 4)
+            best_move = mm.alphabeta_move()
             if check_move_possible(self.matrix, best_move):
                 move(self.matrix, best_move)
                 self.score +=add_upElements_v2(self.matrix, best_move)
                 move(self.matrix, best_move)
-                self.update_score()
-                self.update_grid_cells()
+                self.updateScores()
+                self.UpdateGridCells()
                 simple_adder(self.matrix)
-                self.update_grid_cells()
-                # time.sleep(0.1)
-                # if check_gameOver(self.matrix):
-                    # self.grid_cells[1][1].configure(text="Game", bg=BACKGROUND_columnOR_CELL_EMPTY)
-                    # self.grid_cells[1][2].configure(text="Over!", bg=BACKGROUND_columnOR_CELL_EMPTY)
-
-    # def neural_netword_run(self):
-    #     while not check_gameOver(self.matrix):
-    #         nn = NeuralNetwork(panel= self.matrix)
-    #         best_move = nn.alpha_beta_move()
-    #         if check_move_possible(self.matrix, best_move):
-    #             move(self.matrix, best_move)
-    #             self.score +=add_upElements_v2(self.matrix, best_move)
-    #             move(self.matrix, best_move)
-    #             self.update_score()
-    #             self.update_grid_cells()
-    #             simple_adder(self.matrix)
-    #             self.update_grid_cells()
+                self.UpdateGridCells()
+  

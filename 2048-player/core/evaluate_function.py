@@ -3,8 +3,8 @@
 
 import math
 import copy
-from logic import add_upElements
-from utils import get_not_filled_cell
+from core.logic import add_upElements
+from core.utils import get_not_filled_cell
 
 class Evaluator:
     def __init__(self, panel):

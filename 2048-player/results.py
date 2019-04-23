@@ -1,8 +1,8 @@
 # Run in backend to test performance for different algorithms
 # we measure a panel using maximum score, and total score, and lasting moves
 
-from algorithms.MCTS import naive_random_move
-from algorithms.expectimax import expectimax
+from algorithms.MCTS import random_move_naive
+from algorithms.expectimax import expecti_max_main
 from algorithms.minimax import Minimax
 
 from core.utils import *
@@ -39,7 +39,7 @@ def get_results_mcts(which_algorithm = 'mcts', test_times = 5, sim_moves = (50,1
             panel_info = {}
 
             while not check_gameOver(panel):
-                action, successpanels = naive_random_move(panel, curr_score, test_moves=sim_move)
+                action, successpanels = random_move_naive(panel, curr_score, no_of_test_moves=sim_move)
                 if check_move_possible(panel, action):
                     number_of_moves += 1
 
@@ -135,7 +135,7 @@ def get_results_expectimax(which_algorithm = 'expectimax', test_times = 20, max_
                     add_upElements(temp_panel, direction, 0)
                     move(temp_panel, direction)
 
-                    alpha = expectimax(temp_panel, depth)
+                    alpha = expecti_max_main(temp_panel, depth)
                     if best_val < alpha:
                         best_val = alpha
                         best_move = direction
@@ -214,7 +214,7 @@ def get_results_minimax(which_algorithm='minimax', test_times=20, max_depth = (1
             player = Minimax(panel, depth)
 
             while not check_gameOver(panel):
-                best_move = player.basic_move()
+                best_move = player.basicMove()
                 if check_move_possible(panel, best_move):
                     number_of_moves += 1
                     move(panel,best_move)
@@ -291,7 +291,7 @@ def get_results_minimax_pruning(which_algorithm='minimax_pruning', test_times=20
             player = Minimax(panel, depth)
 
             while not check_gameOver(panel):
-                best_move = player.alpha_beta_move()
+                best_move = player.alphabeta_move()
                 if check_move_possible(panel, best_move):
                     number_of_moves += 1
                     move(panel,best_move)

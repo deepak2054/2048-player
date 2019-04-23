@@ -1,13 +1,13 @@
 from sys import platform
-from core.gui import GameGrid
+from core.gui import Game
 from core.logic import *
-from core.utils import Actions
+from core.utils import actions
 import copy
-from algorithms.expectimax import expectimax
+from algorithms.expectimax import expecti_max_main
 
 
 ACTIONS_MAP = {'w': 'UP', 'W': 'UP', 's': 'DOWN', 'S': 'DOWN',
-           'a': 'LEFT', 'A': 'LEFT', 'd': 'RIGHT', 'D': 'RIGHT'}
+           'a': 'LEFT', 'A': 'LEFT', 'd': 'RIGHT', 'D': 'RIGHT','q':'EXIT','Q':"EXIT"}
 
 
 def win32_press():
@@ -62,8 +62,7 @@ def run_console():
         action = action.upper()
         if action == "EXIT":
             break
-        # take action here to do the move
-        # and clear current , then print panel
+       
         if check_move_possible(panel, action):
             move(panel, action)
             curr_score = add_upElements(panel, action, curr_score)
@@ -74,11 +73,11 @@ def run_console():
         else:
             clear()
             print_panel(panel)
-    print("/nGame end/nTo run this game, type run_keypanel()")
+    print("/nGame Over/nTo restart, Please type run_keypanel()")
 
 
 def run_gui(algo):
-    GameGrid(AI_mode=True, which_AI=algo)
+    Game(mode=True, define_AI=algo)
 
 
 def run(mode = "gui", algo = "expectimax"):
@@ -87,8 +86,7 @@ def run(mode = "gui", algo = "expectimax"):
     elif mode == "console":
         run_console()
     elif mode == "score":
-        # This part is put here just for test visualizer.
-        # Should be encapsulated in the future.
+ 
         if algo == "expectimax":
             panel = generate_panel(4)
             init_two(panel)
@@ -98,7 +96,7 @@ def run(mode = "gui", algo = "expectimax"):
                 best_move = None
                 best_val = -1
 
-                for direction in Actions:
+                for direction in actions:
                     if not check_move_possible(panel, direction):
                         # clear()
                         continue
@@ -108,7 +106,7 @@ def run(mode = "gui", algo = "expectimax"):
                     add_upElements(temp_panel, direction, 0)
                     move(temp_panel, direction)
 
-                    alpha = expectimax(temp_panel, depth)
+                    alpha = expecti_max_main(temp_panel, depth)
                     if best_val < alpha:
                         best_val = alpha
                         best_move = direction
@@ -120,12 +118,13 @@ def run(mode = "gui", algo = "expectimax"):
             max_cell = get_max_no_cells(panel)
             return curr_score, max_cell
         else:
-            raise ValueError("No such algorithm: {}".format(algo))
+            raise ValueError("We dont have such a algorithm: {} .PLEASE TRY AGAIN".format(algo))
 
     else:
         raise ValueError("Unexpect Mode. Choose one from 'gui' or 'console'")
 
+
 if __name__ == "__main__":
-    run(mode = "console", algo = "minimax_pruning")
+    run(mode = "console", algo = "expectimax")
 
 

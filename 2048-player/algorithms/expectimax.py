@@ -1,17 +1,20 @@
 import copy
 import numpy as np
-
-from logic import *
-from utils import *
+import sys
+sys.path.append(sys.path[0]+'/../')
+from core.logic import *
+from core.utils import *
 
 possible_moves = ('UP', 'DOWN', 'LEFT', 'RIGHT')
 probability = {0: 0, 2: 0.9, 4: 0.1}
 
 
-# Evaluate the current score in the panel
+#this function  evaluates the current score within  the panel
 
 def evaluate_current_score(panel):
-  
+    '''
+    Evaluates the current score within the panel
+    '''
     N = len(panel)
     matrix_calculate = [[1 for a in range(N)] for a in range(N)]
     matrix_calculate = np.array(matrix_calculate)
@@ -47,7 +50,7 @@ def evaluate_current_score(panel):
     return score
 
 
-def expectimax(panel, depth):
+def expecti_max_main(panel, depth):
     total_score = 0
     total_probability = 0
     if depth == 0:
@@ -81,7 +84,7 @@ def expectimax(panel, depth):
                 move(temporary_panel, directions)
                 add_upElements(temporary_panel, directions, 0)
                 move(temporary_panel, directions)
-                score = expectimax(temporary_panel, depth - 1)
+                score = expecti_max_main(temporary_panel, depth - 1)
 
                 if score > best_score:
                     best_score = score
@@ -99,7 +102,7 @@ def expectimax(panel, depth):
         return total_score / total_probability
 
 
-def run_expectimax():
+def run_expecti_max_main():
     panel = generate_panel(4)
     init_two(panel)
     print_panel(panel)
@@ -121,7 +124,7 @@ def run_expectimax():
             add_upElements(temporary_panel, direction, 0)
             move(temporary_panel, direction)
 
-            gamma = expectimax(temporary_panel, depth)
+            gamma = expecti_max_main(temporary_panel, depth)
             if best_value < gamma:
                 best_value = gamma
                 best_move = direction
@@ -136,4 +139,4 @@ def run_expectimax():
 
 
 if __name__ == "__main__":
-    run_expectimax()
+    run_expecti_max_main()

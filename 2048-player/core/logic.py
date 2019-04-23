@@ -9,7 +9,7 @@
 
 
 # from core.utils import *
-from util_dupli import *
+from .utils import *
 
 # For moving up and other directions
 def go_up(panel):
@@ -29,7 +29,6 @@ def go_right(panel):
 # The panel has to move to represent the operation
 
 def move(panel, operation):
-   
     N = len(panel)
     if operation == "UP":
         for column in range(0,N):

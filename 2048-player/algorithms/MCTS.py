@@ -3,112 +3,114 @@ import copy
 
 
 # Importing all the utilties
-
-from logic import *
+import sys
+sys.path.append(sys.path[0]+'/../')
+from core.logic import *
 
 # Importing all the logics 
 
-from util_dupli import *
+from core.utils import *
 
 
 
 operations_keypanel = {'w': 'UP', 'W': 'UP', 's': 'DOWN', 'S': 'DOWN',
                    'a': 'LEFT', 'A': 'LEFT', 'd': 'RIGHT', 'D': 'RIGHT'}
 
-# randomMove_naive takes panel, current score and provides the next move
 
 
-def randomMove_naive(panel, current_score, no_of_test_moves=100):
-   
+def random_move_naive(panel, curr_score, no_of_test_moves=100):
+    '''
+    It takes the panel , current score and provides the output for the next move
+    '''
 
     moves = ('UP', 'DOWN', 'LEFT', 'RIGHT')
 
-    successPanels = []
+    succ_panels = []
 
-    scores = [current_score for a in range(len(moves))]
+    scores = [curr_score for a in range(len(moves))]
     for a in range(len(moves)):
         operation = moves[a]
-        test_panel = copy.deepcopy(panel)
+        testPanel = copy.deepcopy(panel)
 
-        if check_move_possible(test_panel, operation):
+        if check_move_possible(testPanel, operation):
 
-            move(test_panel, operation)
+            move(testPanel, operation)
            
-            scores[a] = add_upElements(test_panel, operation, scores[a])
+            scores[a] = add_upElements(testPanel, operation, scores[a])
          
 
-            move(test_panel, operation)
-            add_number(test_panel)
+            move(testPanel, operation)
+            add_number_MCTS(testPanel)
 
 
             total_tries = 0
             total_score_added = 0
-            temporary_panel = copy.deepcopy(test_panel)
+            temporaryPanel = copy.deepcopy(testPanel)
             for tries in range(no_of_test_moves):
                 
                 run_times = 1
-                test_panel = copy.deepcopy(temporary_panel)
+                testPanel = copy.deepcopy(temporaryPanel)
                 
-                while not check_gameOver(test_panel):
-                    test_operation = moves[random.randint(0, 3)]
+                while not check_gameOver(testPanel):
+                    testOperation = moves[random.randint(0, 3)]
                   
                   
-                    if check_move_possible(test_panel, test_operation):
+                    if check_move_possible(testPanel, testOperation):
 
-                        move(test_panel, test_operation)
+                        move(testPanel, testOperation)
                       
-                        total_score_added += add_upElements_v2(test_panel, test_operation)                    
-                        move(test_panel, test_operation)
-                        add_number(test_panel)
+                        total_score_added += add_upElements_v2(testPanel, testOperation)                    
+                        move(testPanel, testOperation)
+                        add_number_MCTS(testPanel)
                         run_times += 1
                 
                 total_tries += run_times
         
         
-                if get_max_no_cells(test_panel) > 4096:
+                if get_max_no_cells(testPanel) > 4096:
 
-                    successPanels.append(test_panel)
+                    succ_panels.append(testPanel)
 
             scores[a] += total_score_added / total_tries
 
-    if max(scores) == current_score:
+    if max(scores) == curr_score:
         print("this time the AI can not make a move")
-        return moves[random.randint(0, 3)], successPanels
+        return moves[random.randint(0, 3)], succ_panels
     else:
-        return moves[scores.index(max(scores))], successPanels
+        return moves[scores.index(max(scores))], succ_panels
 
-def runMCTS_naive(N=4,no_of_test_moves=100):
+def run_MCTS_naive(N=4,no_of_test_moves=100):
 
     random.seed()
 
     panel = generate_panel(N)
     init_two(panel)
     print_panel(panel)
-    current_score = 0
+    curr_score = 0
 
     stuck = 0
-    human = False
+    man = False
     while not check_gameOver(panel):
 
         print(" ")
-        print("The score at the moment(Current Score), ", current_score)
-        print("Possible operations: up, left, right, down, exit")
-        if not human:
-            operation, successPanels = randomMove_naive(
-                panel, current_score, no_of_test_moves)
-            if len(successPanels) > 0:
+        print("Current score is(Current Score), ", curr_score)
+        print("Possible operations: Up, Down, Left, Right,  Exit")
+        if not man:
+            operation, succ_panels = random_move_naive(
+                panel, curr_score, no_of_test_moves)
+            if len(succ_panels) > 0:
                 c = input("find success panel in test run, please press enter")
-                for successBoard in successPanels:
+                for successBoard in succ_panels:
                     print_panel(successBoard)
                     print(" ")
                 c = input("Enter to continue: ")
             operation = operation.upper()
         else:
-            print("AI is stucked !!! Asking for human help :(  ")
+            print("AI is stucked !!! Asking for man help :(  ")
             print("Possible operations: up, left, right, down, exit")
             operation = input('Your operation: ')
             operation = operation.upper()
-            human = False
+            man = False
 
         if operation == "EXIT":
             break
@@ -116,10 +118,10 @@ def runMCTS_naive(N=4,no_of_test_moves=100):
         if check_move_possible(panel, operation):
             move(panel, operation)
          
-            current_score += add_upElements_v2(panel, operation)
+            curr_score += add_upElements_v2(panel, operation)
             move(panel, operation)
             clear()
-            add_number(panel)
+            add_number_MCTS(panel)
             print_panel(panel)
             print(" ")
         else:
@@ -130,43 +132,43 @@ def runMCTS_naive(N=4,no_of_test_moves=100):
                 clear()
                 print_panel(panel)
                 stuck = 0
-                human = True
+                man = True
 
    
-    print("Your Score is ", current_score)
+    print("Your Score is ", curr_score)
     print("Max number in panel is", get_max_no_cells(panel))
     print("Game end")
     return get_max_no_cells(panel)
 
 
-def human_turn():
+def man_turn():
     panel = generate_panel(4)
     init_two(panel)
     print_panel(panel)
-    current_score = 0
-    while not check_end(panel):
+    curr_score = 0
+    while not check_gameOver(panel):
         print(" ")
-        print("current score is, ", current_score)
+        print("current score is, ", curr_score)
         print("Possible operations: up, left, right, down, exit")
         print("Please press WASD for UP LEFT DOWN RIGHT")
-        operation = operations_keypanel[key_press()]
+        operation = operations_keypanel[pressed_key()]
         operation = operation.upper()
         if operation == "EXIT":
             break
   
         if check_move_possible(panel, operation):
             move(panel, operation)
-            current_score = add_upElements(panel, operation, current_score)
+            curr_score = add_upElements(panel, operation, curr_score)
             move(panel, operation)
             clear()
-            add_number(panel)
+            add_number_MCTS(panel)
             print_panel(panel)
         else:
             clear()
             print_panel(panel)
     print("")
     print("Game Overrr!!")
-    print("Your Score is ", current_score)
+    print("Your Score is ", curr_score)
     print("Max number in panel is", get_max_no_cells(panel))
     print("To run this game, type run()")
 
@@ -188,3 +190,5 @@ def add_number_MCTS(panel):
         panel[row][column] = 2
     else:
         panel[row][column] = 4
+
+run_MCTS_naive()
